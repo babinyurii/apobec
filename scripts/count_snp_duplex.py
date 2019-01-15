@@ -141,7 +141,7 @@ def create_pivot_df(df_snp):
     return context_data
 
 
-def save_df(f, df_container, df_perc_container):
+def save_df(f, df_snp_container, df_container, df_perc_container):
     """saves dataframes into an excel spreadsheet
     """
     if not os.path.exists("./output_apobec"):
@@ -150,6 +150,11 @@ def save_df(f, df_container, df_perc_container):
     file_name = f.rsplit(".", 1)[0]
     writer = pd.ExcelWriter("./output_apobec/" + file_name +'.xlsx')
     
+    counter = 0
+    for df in df_snp_container:
+        df.to_excel(writer, "raw_count" + str(counter))    
+        counter += 1
+        
     for df in df_container:
         tab_name = df.index[0][0]
         df.to_excel(writer, "nuc_" + tab_name)
@@ -243,6 +248,8 @@ def main():
         for f in input_files:
             #print("processing file '{}'".format(f))
             
+            df_snp_container = []
+            
             df_container = []
             for nuc in nucleotides:
         
@@ -257,6 +264,9 @@ def main():
     
                 df_snp, coverage = count_snp(f, df, nuc)
                 df_duplex_context = create_pivot_df(df_snp)
+                
+                df_snp_container.append(df_snp)
+                
                 df_container.append(df_duplex_context)
 
             # counting total number of variants detected
@@ -269,7 +279,7 @@ def main():
             for df in df_container:
                 df_perc_container.append(df / total_snpes * 100)
             
-            save_df(f,  df_container, df_perc_container)
+            save_df(f, df_snp_container, df_container, df_perc_container)
             
             create_bar_chart(f, df_perc_container)
 
