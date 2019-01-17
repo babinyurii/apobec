@@ -41,10 +41,12 @@ low level fasta parser 'SimpleFastaParser' is used
 
 
 import os
+import datetime
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import numpy as np
+from time import time
 from Bio.SeqIO.FastaIO import SimpleFastaParser  # low level fast fasta parser
 from ipywidgets import FloatProgress
 from IPython.display import display
@@ -130,7 +132,7 @@ def count_snp(in_file, df, nuc_to_watch):
                     
                     df.loc[row, snp] += 1
         
-    return df, coverage
+    return df, coverage - 1
 
 
 def create_pivot_df(df_snp):
@@ -141,43 +143,48 @@ def create_pivot_df(df_snp):
     return context_data
 
 
-def save_df(f, df_snp_container, df_container, df_perc_container):
+def save_df(f, df_raw_snp_container, 
+            df_duplex_container, 
+            df_perc_container,
+            df_cov):
     """saves dataframes into an excel spreadsheet
     """
     if not os.path.exists("./output_apobec"):
-        os.mkdir("output_apobec")
+        os.mkdir("./output_apobec")
 
     file_name = f.rsplit(".", 1)[0]
     writer = pd.ExcelWriter("./output_apobec/" + file_name +'.xlsx')
     
     counter = 0
-    for df in df_snp_container:
+    for df in df_raw_snp_container:
         df.to_excel(writer, "raw_count" + str(counter))    
         counter += 1
         
-    for df in df_container:
+    for df in df_duplex_container:
         tab_name = df.index[0][0]
         df.to_excel(writer, "nuc_" + tab_name)
         
     for df in df_perc_container:
         tab_name = df.index[0][0]
         df.to_excel(writer, "nuc_" + tab_name + "_percentage")
+    
+    df_cov.to_excel(writer, "coverage")
 
     writer.save()
 
     
     
-def get_input_files_names():
-    path_to_input = "./input_data"
+def get_input_files_names(path_to_input):
+    
     fasta_extensions = ["fasta", "fa", "fas"]
-    input_files = os.listdir("./input_data")
+    input_files = os.listdir(path_to_input)
     input_files = [f for f in input_files if f.rsplit(".", 1)[-1] in fasta_extensions]
      
     return input_files
 
 
 
-def create_bar_chart(file_name, df_perc_container):
+def create_bar_chart(file_name, df_perc_container, largest_percent):
     """
     creates bar chart using list of dataframes with 
     snp percentage. Percentage is calculated relatively 
@@ -219,81 +226,180 @@ def create_bar_chart(file_name, df_perc_container):
                 lw=2,
                 label=columns[2])
 
-        ax.set_ylabel('raw count')
-        ax.set_xlabel('duplex', fontsize=15)
-        ax.set_title("number of SNPs in the context", fontsize=20)
+        ax.set_ylabel('percent')
+        ax.set_xlabel('reference duplex', fontsize=15)
+        ax.set_title("SNP percent in the duplex context", fontsize=20)
         ax.set_xticks([p + 1.0 * width for p in pos])
 
         ax.set_xticklabels(df.index)
         plt.legend(loc='upper left')
-        plt.ylim(0, 30)
+        plt.ylim(0, largest_percent + 5)
     
         nuc = df.index[0][0]
         fig.savefig("./output_apobec/" + file_name.rsplit(".", 1)[0] + "_bars_" + nuc +  ".png") 
+        # plt.show() # comment to save figure, otherwise it'll save blank file
+        plt.close()  # comment the line to show the figure in the jupyter or wherever
+
+
+def _get_current_time():
+    """just returns time stamp
+    """
+    time_stamp = datetime.datetime.fromtimestamp(
+        time()).strftime('%Y-%m-%d %H:%M:%S')
+    
+    return time_stamp
+
+
+
+def show_report(total_time, total_files):
+    """prints out  brief report 
+    """
+
+    hours = total_time // 3600
+    minutes = (total_time % 3600) // 60
+    seconds = total_time % 60
+
+    print("""
+    
+    file processed: {0}
+    time taken: {1} hours {2} minutes {3} seconds
+    
+    the results are in the folder 'output_apobec'
+    
+    ---------------
+    ... job finished at {4}
+    ---------------
+    
+    """.format(total_files, hours, minutes, int(seconds), _get_current_time()))
+ 
 
 
 def main():
     
+    start_time = time()
+    file_counter = 0
     nucleotides = ["A", "T", "G", "C"]
     
     if os.path.exists("./input_data"):
-        input_files = get_input_files_names()
+        input_files = get_input_files_names("./input_data")
         
         num_files = len(input_files)
+        print("""
+               ---------------
+               job started at {0} ...
+               ---------------
+               """.format(_get_current_time()))
         
-        print("job started at : ")
         progress_bar = FloatProgress(min=0, max=num_files)
         display(progress_bar)
     
         for f in input_files:
             #print("processing file '{}'".format(f))
             
-            df_snp_container = []
+            df_raw_snp_container = []
+            df_duplex_container = []
             
-            df_container = []
             for nuc in nucleotides:
         
                 snp_type = nucleotides[:]
                 snp_type.remove(nuc)
-    
-                ref_seq = get_ref(f)
-    
+                
+                try:
+                    ref_seq = get_ref(f)
+                except PermissionError as permerr:
+                    print("""
+                      warning: It seems that the file'{0}' is open in some other 
+                      application, like 'Geneious' or whatever,
+                      which doesn't allow it to be processed
+                      Now this file is skipped
+                       """.format(f))
+                
                 duplex_posits = get_duplex_posits(ref_seq, nuc)
-    
                 df = create_df(duplex_posits, snp_type)
-    
-                df_snp, coverage = count_snp(f, df, nuc)
-                df_duplex_context = create_pivot_df(df_snp)
                 
-                df_snp_container.append(df_snp)
+                try:
+                    df_snp, coverage = count_snp(f, df, nuc)
+                except PermissionError as permerr:
+                    print("""
+                      warning: It seems that the file'{0}' is open in some other 
+                      application, like 'Geneious' or whatever,
+                      which doesn't allow it to be processed
+                      Now this file is skipped
+                       """.format(f))
                 
-                df_container.append(df_duplex_context)
+                df_duplex_in_context = create_pivot_df(df_snp)
+                
+                df_raw_snp_container.append(df_snp)
+                df_duplex_container.append(df_duplex_in_context)
 
             # counting total number of variants detected
             # and calculating percentage pivot tables
+            
+            # TODO
+            # three loops under should be wrapped as function
+            # like : get_summary
+            
             total_snpes = 0
-            for df in df_container:
+            for df in df_duplex_container:
                 total_snpes += df.sum().sum()
             
             df_perc_container = []
-            for df in df_container:
+            for df in df_duplex_container:
                 df_perc_container.append(df / total_snpes * 100)
+                
+            largest_percent_in_df = []
+            for df in df_perc_container:
+                largest_percent_in_df.append(df.max().max())
+            largest_percent = max(largest_percent_in_df)
             
-            save_df(f, df_snp_container, df_container, df_perc_container)
             
-            create_bar_chart(f, df_perc_container)
+            df_cov = pd.DataFrame.from_dict({"coverage": coverage}, orient='index')
 
-            progress_bar.value += 1
+            try:
+                save_df(f, 
+                        df_raw_snp_container, 
+                        df_duplex_container, 
+                        df_perc_container,
+                        df_cov)
+            except PermissionError as permerr:
+                print("""
+                      warning: It seems that excel spreadsheet '{0}' is open in excel.
+                      To process the corresponding 'fasta' file, rerun the script
+                      now this file is skipped. error: {1}
+                      """.format(f, permerr))
             
+            try:   
+                create_bar_chart(f, df_perc_container, largest_percent)
+            except ValueError as valerr:
+                print(""""
+                      plot can't be constructed. 
+                      sequences in the input file may be too short. {0}
+                      """.format(valerr))
+            
+            progress_bar.value += 1
+            file_counter += 1
+        
+        finish_time = time()
+        total_time = finish_time - start_time
+        show_report(total_time, file_counter)
+        
     else:
-        os.mkdir("input_data")        
+        os.mkdir("./input_data")
+        print(
+             """
+        Houston, we have a problem...
+        --------
+        folder 'input_data' doesn't exist in the current directory 
+        or may be you've created it but misspelled its name.
+        Anyway, it has just been created by this script.
+        Paste your 'fasta' files into the folder 'input_data' 
+        and run this script again.
+        --------
+        """
+        )
         
         
 if __name__ == "__main__":
     main()
-
-
-
-
 
 
