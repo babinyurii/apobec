@@ -1,5 +1,5 @@
 # apobec
-### NGS data analysis for HBV crispr/cas9 research group 
+`apobec` contains two scripts that are used for NGS data analysis by HBV crispr/cas9 research group. 
 
 ## Requirements
 - Python 3
@@ -8,8 +8,13 @@
 - seaborn
 - pandas
 
+## Installation
+The package is not avialable now via `pip`. So, just download and unpack it.
+
 ## Description
-This script takes fasta alignment as an input. The input file is the result of reads mapping onto the reference sequence. `count_snp_duplex.py` counts  SNP in dinucleotide duplex context.
+This script takes fasta alignment as an input. The input file is the result of deep sequencing reads mapping onto the reference sequence and is imported from the Geneious software.
+
+`count_snp_duplex.py` counts  SNP in dinucleotide duplex context.
 
 `count_snp_duplex.py` outputs summary bar charts : 
 ![bars](output_example/bars.png)
