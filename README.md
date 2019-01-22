@@ -1,5 +1,5 @@
 # apobec
-`apobec` contains two scripts that are used for NGS data analysis by HBV crispr/cas9 research group. 
+`apobec` contains two in-house scripts that are used for NGS data analysis by HBV crispr/cas9 research group. 
 
 ## Requirements
 - Python 3
