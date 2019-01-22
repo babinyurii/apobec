@@ -5,7 +5,7 @@ Created on Thu Jan 10 13:20:05 2019
 @author: babin
 """
 
-""" apobec_count_duplex.py
+""" count_snp_duplex.py
 this script count exact number of SNPs and their percentage in "fasta" file
 and writes results into the excel spreadsheet.
 the script compares each sequence with the reference
@@ -27,13 +27,9 @@ IMPORTANT NOTES:
     new values have n elements'. This is the pandas exception concerning indices.
 
 to use the script:
-    1. create folder 'input_data' in the current directory and paste 'fasta' files into it
-    2. import script into the current directory using Jupyter or whatever and run it:
-        1) from apobec_scripts import apobec_count_duplex
-        execute apobec_count_duplex()
-        2) %run apobec_count_duplex.py
-    or put the script into the current directory and run via shell:
-    python run_count_indels.py
+    1. create folder 'input_data' in the current directory and put input 'fasta' files into it
+    2. put folder 'apobec' containing scripts into the current directory
+    3. run in jupyter : %run ./scripts/count_snp_duplex.py
 
 NOTE: to speed up the exection instead of 'SeqIO.parse()
 low level fasta parser 'SimpleFastaParser' is used 
@@ -228,11 +224,11 @@ def create_bar_chart(file_name, df_perc_container, largest_percent):
 
         ax.set_ylabel('percent')
         ax.set_xlabel('reference duplex', fontsize=15)
-        ax.set_title("SNP percent in the duplex context", fontsize=20)
+        ax.set_title("SNP percent at the first position in the duplex context", fontsize=20)
         ax.set_xticks([p + 1.0 * width for p in pos])
 
         ax.set_xticklabels(df.index)
-        plt.legend(loc='upper left')
+        plt.legend(loc='upper left', title="SNP type")
         plt.ylim(0, largest_percent + 5)
     
         nuc = df.index[0][0]
@@ -294,13 +290,10 @@ def main():
         display(progress_bar)
     
         for f in input_files:
-            #print("processing file '{}'".format(f))
-            
             df_raw_snp_container = []
             df_duplex_container = []
             
             for nuc in nucleotides:
-        
                 snp_type = nucleotides[:]
                 snp_type.remove(nuc)
                 
@@ -328,13 +321,9 @@ def main():
                        """.format(f))
                 
                 df_duplex_in_context = create_pivot_df(df_snp)
-                
                 df_raw_snp_container.append(df_snp)
                 df_duplex_container.append(df_duplex_in_context)
-
-            # counting total number of variants detected
-            # and calculating percentage pivot tables
-            
+                
             # TODO
             # three loops under should be wrapped as function
             # like : get_summary
@@ -396,8 +385,7 @@ def main():
         and run this script again.
         --------
         """
-        )
-        
+        )      
         
 if __name__ == "__main__":
     main()
