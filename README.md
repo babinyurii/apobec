@@ -9,10 +9,10 @@
 - pandas
 
 ## Installation
-The package is not avialable now via `pip`. So, just download and unpack it.
+Just download and unpack the package.
 
 ## Description
-This script takes fasta alignment as an input. The input file is the result of deep sequencing reads mapping onto the reference sequence and is imported from the Geneious software.
+The scripts take fasta alignment as an input. The input file is the result of deep sequencing reads mapping onto the reference sequence and is imported from the Geneious software.
 
 `count_snp_duplex.py` counts  SNP in dinucleotide duplex context.
 
@@ -25,3 +25,12 @@ and excel spreadsheets to further manipulate the data  :
 ![bars](output_example/pivot_count.PNG)
 
 ![bars](output_example/pivot_percent.PNG)
+
+`snp_rate.py` counts SNP in each read.
+
+It outputs a distribution plot:
+![dist](output_example/mutation_rate_distribution.png)
+
+and also raw count and summary statistics in excel spreadsheets:
+![sum_stat](output_example/pivot_mutation_data.png)
+
