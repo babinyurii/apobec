@@ -29,7 +29,7 @@ and excel spreadsheets to further manipulate the data  :
 `snp_rate.py` counts SNP in each read.
 
 It outputs a distribution plot:
-![dist](output_example/mutation_rate_distribution.png)
+![dist](output_example/snp_dist.png)
 
 and also raw count and summary statistics in excel spreadsheets:
 ![sum_stat](output_example/pivot_mutation_data.png)
