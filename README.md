@@ -9,7 +9,11 @@
 - pandas
 
 ## Installation
-Just download and unpack the package.
+```
+pip install apobec
+```
+## Usage
+
 
 ## Description
 The scripts take fasta alignment as an input. The input file is the result of deep sequencing reads mapping onto the reference sequence and is imported from the Geneious software.
