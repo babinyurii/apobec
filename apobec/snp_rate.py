@@ -42,7 +42,7 @@ import seaborn as sns
 from Bio.SeqIO.FastaIO import SimpleFastaParser  # low level fast fasta parser
 from time import time
 from IPython.display import display
-from ipywidgets import FloatProgress
+from ipywidgets import IntProgress
 sns.set()
 
 
@@ -224,7 +224,7 @@ def main():
                """.format(get_current_time()))
 
         print("collecting snp...")
-        progress_bar = FloatProgress(min=0, max=num_files)
+        progress_bar = IntProgress(min=0, max=num_files, bar_style='success')
         display(progress_bar)
 
         series_container = []

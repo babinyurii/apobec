@@ -42,7 +42,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from Bio.SeqIO.FastaIO import SimpleFastaParser  # low level fast fasta parser
-from ipywidgets import FloatProgress
+from ipywidgets import IntProgress
 from IPython.display import display
 from time import time
 sns.set()
@@ -294,7 +294,7 @@ def main():
                ---------------
                """.format(get_current_time()))
 
-        progress_bar = FloatProgress(min=0, max=num_files)
+        progress_bar = IntProgress(min=0, max=num_files, bar_style='success')
         display(progress_bar)
 
         for f in input_files:
