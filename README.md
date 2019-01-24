@@ -13,7 +13,20 @@
 pip install apobec
 ```
 ## Usage
-
+`apobec` can be used via shell or Jupyter Notebook. Create folder named `input_data` and put your fastas into it. Navigate into the directory which contains the `input_data` folder. Then import package :
+```python
+import apobec
+```
+and run via shell :
+```
+python -m apobec.count_snp_duplex
+python -m apobec.snp_rate
+```
+or by Jupyter Notebook :
+```python
+%run -m apobec.count_snp_duplex
+%run -m apobec.snp_rate
+```
 
 ## Description
 The scripts take fasta alignment as an input. The input file is the result of deep sequencing reads mapping onto the reference sequence and is imported from the Geneious software.
