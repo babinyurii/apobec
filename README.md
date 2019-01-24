@@ -1,14 +1,6 @@
 # apobec
 `apobec` contains two in-house scripts that are used for NGS data analysis by HBV crispr/cas9 research group. 
 
-## Requirements
-- Python 3
-- biopython
-- matplotlib
-- numpy
-- pandas
-- seaborn
-
 ## Installation
 ```
 pip install apobec
@@ -52,3 +44,10 @@ It outputs a distribution plot:
 and also raw count and summary statistics in excel spreadsheets:
 ![sum_stat](output_example/pivot_mutation_data.png)
 
+## Requirements
+- Python 3
+- biopython
+- matplotlib
+- numpy
+- pandas
+- seaborn
