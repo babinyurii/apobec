@@ -3,10 +3,11 @@
 
 ## Requirements
 - Python 3
-- Biopython
+- biopython
 - matplotlib
-- seaborn
+- numpy
 - pandas
+- seaborn
 
 ## Installation
 ```
