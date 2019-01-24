@@ -6,7 +6,7 @@
 pip install apobec
 ```
 ## Usage
-`apobec` intended to be used in Jupyter Notebook. Create folder named `input_data` and put your fastas into it. Navigate into the directory which contains the `input_data` folder. Then import the package :
+`apobec` is intended to be used in Jupyter Notebook. Create folder named `input_data` and put your fastas into it. Navigate into the directory which contains the `input_data` folder. Then import the package :
 ```python
 import apobec
 ```
