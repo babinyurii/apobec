@@ -6,16 +6,11 @@
 pip install apobec
 ```
 ## Usage
-`apobec` can be used via shell or Jupyter Notebook. Create folder named `input_data` and put your fastas into it. Navigate into the directory which contains the `input_data` folder. Then import the package via shell or Jupyter :
+`apobec` intended to be used in Jupyter Notebook. Create folder named `input_data` and put your fastas into it. Navigate into the directory which contains the `input_data` folder. Then import the package :
 ```python
 import apobec
 ```
-and run via shell :
-```
-python -m apobec.count_snp_duplex
-python -m apobec.snp_rate
-```
-or by Jupyter Notebook :
+and run :
 ```python
 %run -m apobec.count_snp_duplex
 %run -m apobec.snp_rate
