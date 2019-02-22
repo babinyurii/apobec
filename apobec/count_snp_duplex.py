@@ -168,7 +168,7 @@ def save_df(f, df_raw_snp_container,
         os.mkdir("./output_apobec")
 
     file_name = f.rsplit(".", 1)[0]
-    writer = pd.ExcelWriter("./output_apobec/" + file_name + '.xlsx')
+    writer = pd.ExcelWriter("./output_apobec/" + file_name + '_1st_pos_.xlsx')
 
     counter = 0
     for df in df_raw_snp_container:
@@ -187,8 +187,62 @@ def save_df(f, df_raw_snp_container,
 
     writer.save()
 
-
 def create_bar_chart(file_name, df_perc_container, largest_percent):
+    """
+    creates bar chart using list of dataframes with 
+    snp percentage. Percentage is calculated relatively 
+    total number of snp found
+    """
+    for df in df_perc_container:
+        n_samples = len(df.index)
+        pos = [x for x in range(0, n_samples)] # number of bar stacks, which is n_features in df
+        width = 0.25
+        fig, ax = plt.subplots(figsize=(10, 5))
+        columns = df.columns.tolist()
+
+        plt.bar(pos,
+                df[columns[0]],
+                width,
+                alpha=0.5,
+                color='darkcyan',
+                edgecolor='black',
+                lw=2,
+                label=columns[0])
+
+        plt.bar([p + width for p in pos],
+                df[columns[1]],
+                width,
+                alpha=0.5,
+                color='silver',
+                edgecolor='black',
+                lw=2,
+                label=columns[1])
+
+        plt.bar([p + width * 2 for p in pos],
+                df[columns[2]],
+                width,
+                alpha=0.5,
+                color='sandybrown',
+                edgecolor='black',
+                lw=2,
+                label=columns[2])
+
+        ax.set_ylabel('percent')
+        ax.set_xlabel('reference duplex', fontsize=15)
+        ax.set_title("SNP percent at the first position in the duplex context", fontsize=20)
+        ax.set_xticks([p + 1.0 * width for p in pos])
+
+        ax.set_xticklabels(df.index)
+        plt.legend(loc='upper left', title="SNP type")
+        plt.ylim(0, largest_percent + 5)
+
+        nuc = df.index[0][0]
+        fig.savefig("./output_apobec/" + file_name.rsplit(".", 1)[0] +"_" + nuc + "_1st_pos_.png")
+        # plt.show() # comment to save figure, otherwise it'll save blank file
+        plt.close(fig)  # comment the line to show the figure in the jupyter or wherever
+
+
+def _create_bar_chart(file_name, df_perc_container, largest_percent):
     """
     creates bar chart using list of dataframes with 
     snp percentage. Percentage is calculated relatively 
@@ -232,8 +286,7 @@ def create_bar_chart(file_name, df_perc_container, largest_percent):
 
         ax.set_ylabel('percent')
         ax.set_xlabel('reference duplex', fontsize=15)
-        ax.set_title(
-            "SNP percent at the first position in the duplex context", fontsize=20)
+        ax.set_title("SNP percent at the first position in the duplex context", fontsize=20)
         ax.set_xticks([p + 1.0 * width for p in pos])
 
         ax.set_xticklabels(df.index)
@@ -242,9 +295,11 @@ def create_bar_chart(file_name, df_perc_container, largest_percent):
 
         nuc = df.index[0][0]
         fig.savefig("./output_apobec/" + file_name.rsplit(".", 1)
-                    [0] + "_bars_" + nuc + ".png")
+                    [0] + nuc + "_1st_pos_.png")
         # plt.show() # comment to save figure, otherwise it'll save blank file
-        plt.close()  # comment the line to show the figure in the jupyter or wherever
+        # comment the line under to show the figure in the jupyter or wherever
+        # plt.close(fig) closes the figure instance to avoid memory error
+        plt.close(fig)  
 
 
 def get_current_time():
@@ -278,6 +333,26 @@ def show_report(total_time, total_files):
     """.format(total_files, hours, minutes, int(seconds), get_current_time()))
 
 
+def convert_pivot_df_into_percent(df_duplex_container):
+    total_snpes = 0
+    for df in df_duplex_container:
+        total_snpes += df.sum().sum()
+    df_perc_container = []
+    for df in df_duplex_container:
+        df_perc_container.append(df / total_snpes * 100)
+    
+    return df_perc_container
+
+
+def get_largest_percent(df_perc_container):
+    largest_percent_in_df = []
+    for df in df_perc_container:
+        largest_percent_in_df.append(df.max().max())
+    largest_percent = max(largest_percent_in_df)
+    
+    return largest_percent
+
+
 def main():
 
     start_time = time()
@@ -300,21 +375,20 @@ def main():
         for f in input_files:
             df_raw_snp_container = []
             df_duplex_container = []
+            
+            try:
+                ref_seq = get_ref(f)
+            except PermissionError as permerr:
+                print("""
+                warning: It seems that the file'{0}' is open in some other
+                application, like 'Geneious' or whatever,which doesn't allow it 
+                to be processed. Now this file is skipped
+                """.format(f))
 
             for nuc in nucleotides:
                 snp_type = nucleotides[:]
                 snp_type.remove(nuc)
-
-                try:
-                    ref_seq = get_ref(f)
-                except PermissionError as permerr:
-                    print("""
-                      warning: It seems that the file'{0}' is open in some other 
-                      application, like 'Geneious' or whatever,
-                      which doesn't allow it to be processed
-                      Now this file is skipped
-                       """.format(f))
-
+                
                 duplex_posits = get_duplex_posits(ref_seq, nuc)
                 df = create_df(duplex_posits, snp_type)
 
@@ -331,24 +405,9 @@ def main():
                 df_duplex_in_context = create_pivot_df(df_snp)
                 df_raw_snp_container.append(df_snp)
                 df_duplex_container.append(df_duplex_in_context)
-
-            # TODO
-            # three loops under should be wrapped as function
-            # like : get_summary
-
-            total_snpes = 0
-            for df in df_duplex_container:
-                total_snpes += df.sum().sum()
-
-            df_perc_container = []
-            for df in df_duplex_container:
-                df_perc_container.append(df / total_snpes * 100)
-
-            largest_percent_in_df = []
-            for df in df_perc_container:
-                largest_percent_in_df.append(df.max().max())
-            largest_percent = max(largest_percent_in_df)
-
+                
+            df_perc_container = convert_pivot_df_into_percent(df_duplex_container)
+            
             df_cov = pd.DataFrame.from_dict(
                 {"coverage": coverage}, orient='index')
 
@@ -364,7 +423,8 @@ def main():
                       To process the corresponding 'fasta' file, rerun the script
                       now this file is skipped. error: {1}
                       """.format(f, permerr))
-
+                
+            largest_percent = get_largest_percent(df_perc_container)
             try:
                 create_bar_chart(f, df_perc_container, largest_percent)
             except ValueError as valerr:
