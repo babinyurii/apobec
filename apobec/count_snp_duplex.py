@@ -242,66 +242,6 @@ def create_bar_chart(file_name, df_perc_container, largest_percent):
         plt.close(fig)  # comment the line to show the figure in the jupyter or wherever
 
 
-def _create_bar_chart(file_name, df_perc_container, largest_percent):
-    """
-    creates bar chart using list of dataframes with 
-    snp percentage. Percentage is calculated relatively 
-    total number of snp found
-    """
-    for df in df_perc_container:
-
-        pos = [0, 1, 2, 3]
-        width = 0.25
-
-        fig, ax = plt.subplots(figsize=(10, 5))
-
-        columns = df.columns.tolist()
-
-        plt.bar(pos,
-                df[columns[0]],
-                width,
-                alpha=0.5,
-                color='darkcyan',
-                edgecolor='black',
-                lw=2,
-                label=columns[0])
-
-        plt.bar([p + width for p in pos],
-                df[columns[1]],
-                width,
-                alpha=0.5,
-                color='silver',
-                edgecolor='black',
-                lw=2,
-                label=columns[1])
-
-        plt.bar([p + width * 2 for p in pos],
-                df[columns[2]],
-                width,
-                alpha=0.5,
-                color='sandybrown',
-                edgecolor='black',
-                lw=2,
-                label=columns[2])
-
-        ax.set_ylabel('percent')
-        ax.set_xlabel('reference duplex', fontsize=15)
-        ax.set_title("SNP percent at the first position in the duplex context", fontsize=20)
-        ax.set_xticks([p + 1.0 * width for p in pos])
-
-        ax.set_xticklabels(df.index)
-        plt.legend(loc='upper left', title="SNP type")
-        plt.ylim(0, largest_percent + 5)
-
-        nuc = df.index[0][0]
-        fig.savefig("./output_apobec/" + file_name.rsplit(".", 1)
-                    [0] + nuc + "_1st_pos_.png")
-        # plt.show() # comment to save figure, otherwise it'll save blank file
-        # comment the line under to show the figure in the jupyter or wherever
-        # plt.close(fig) closes the figure instance to avoid memory error
-        plt.close(fig)  
-
-
 def get_current_time():
     """just returns time stamp
     """
