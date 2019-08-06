@@ -6,8 +6,9 @@ Created on Thu Jan 10 13:20:05 2019
 """
 
 """ count_snp_duplex.py
-this script count exact number of SNPs and their percentage in "fasta" file
-and writes results into the excel spreadsheet.
+this script count exact number of SNPs and their percentage according
+to the dinucleotide context in "fasta" files
+It writes results into  excel spreadsheets.
 the script compares each sequence with the reference
 and counts SNPs in the context of duplexes
 it takes 'fasta' file imported from Geneious as an input
@@ -25,19 +26,12 @@ IMPORTANT NOTES:
     if reference sequence starts or ends with gap, the scrips will throw: 
     'ValueError: Length mismatch: Expected axis has N elements, 
     new values have n elements'. This is the pandas exception concerning indices.
-
-to use the script:
-    1. create folder 'input_data' in the current directory and put input 'fasta' files into it
-    2. put folder 'apobec' containing scripts into the current directory
-    3. run in jupyter : %run ./scripts/count_snp_duplex.py
-
 NOTE: to speed up the exection instead of 'SeqIO.parse()
 low level fasta parser 'SimpleFastaParser' is used 
 """
 
 import datetime
 import os
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -187,59 +181,6 @@ def save_df(f, df_raw_snp_container,
 
     writer.save()
 
-def create_bar_chart(file_name, df_perc_container, largest_percent):
-    """
-    creates bar chart using list of dataframes with 
-    snp percentage. Percentage is calculated relatively 
-    total number of snp found
-    """
-    for df in df_perc_container:
-        n_samples = len(df.index)
-        pos = [x for x in range(0, n_samples)] # number of bar stacks, which is n_features in df
-        width = 0.25
-        fig, ax = plt.subplots(figsize=(10, 5))
-        columns = df.columns.tolist()
-
-        plt.bar(pos,
-                df[columns[0]],
-                width,
-                alpha=0.5,
-                color='darkcyan',
-                edgecolor='black',
-                lw=2,
-                label=columns[0])
-
-        plt.bar([p + width for p in pos],
-                df[columns[1]],
-                width,
-                alpha=0.5,
-                color='silver',
-                edgecolor='black',
-                lw=2,
-                label=columns[1])
-
-        plt.bar([p + width * 2 for p in pos],
-                df[columns[2]],
-                width,
-                alpha=0.5,
-                color='sandybrown',
-                edgecolor='black',
-                lw=2,
-                label=columns[2])
-
-        ax.set_ylabel('percent')
-        ax.set_xlabel('reference duplex', fontsize=15)
-        ax.set_title("SNP percent at the first position in the duplex context", fontsize=20)
-        ax.set_xticks([p + 1.0 * width for p in pos])
-
-        ax.set_xticklabels(df.index)
-        plt.legend(loc='upper left', title="SNP type")
-        plt.ylim(0, largest_percent + 5)
-
-        nuc = df.index[0][0]
-        fig.savefig("./output_apobec/" + file_name.rsplit(".", 1)[0] +"_" + nuc + "_1st_pos_.png")
-        # plt.show() # comment to save figure, otherwise it'll save blank file
-        plt.close(fig)  # comment the line to show the figure in the jupyter or wherever
 
 
 def get_current_time():
@@ -282,15 +223,6 @@ def convert_pivot_df_into_percent(df_duplex_container):
         df_perc_container.append(df / total_snpes * 100)
     
     return df_perc_container
-
-
-def get_largest_percent(df_perc_container):
-    largest_percent_in_df = []
-    for df in df_perc_container:
-        largest_percent_in_df.append(df.max().max())
-    largest_percent = max(largest_percent_in_df)
-    
-    return largest_percent
 
 
 def main():
@@ -363,16 +295,7 @@ def main():
                       To process the corresponding 'fasta' file, rerun the script
                       now this file is skipped. error: {1}
                       """.format(f, permerr))
-                
-            largest_percent = get_largest_percent(df_perc_container)
-            try:
-                create_bar_chart(f, df_perc_container, largest_percent)
-            except ValueError as valerr:
-                print(""""
-                      plot can't be constructed. 
-                      sequences in the input file may be too short. {0}
-                      """.format(valerr))
-
+              
             progress_bar.value += 1
             file_counter += 1
 
