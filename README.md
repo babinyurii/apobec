@@ -13,6 +13,7 @@ import apobec
 and run :
 ```python
 %run -m apobec.count_snp_duplex
+%run -m apobec.create_bars
 %run -m apobec.snp_rate
 ```
 
@@ -21,10 +22,10 @@ The scripts take fasta alignment as an input. The input file is the result of de
 
 `count_snp_duplex.py` counts  SNP in dinucleotide duplex context.
 
-`count_snp_duplex.py` outputs summary bar charts : 
+`create_bars.py` outputs summary bar charts : 
 ![bars](output_example/bars.png)
 
-and excel spreadsheets to further manipulate the data  :
+`count_snp_duplex.py` outputs excel spreadsheets to further manipulate the data  :
 ![bars](output_example/raw_count_spread_sheet.PNG)
 
 ![bars](output_example/pivot_count.PNG)
