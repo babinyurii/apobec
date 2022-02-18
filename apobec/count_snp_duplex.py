@@ -32,6 +32,7 @@ low level fasta parser 'SimpleFastaParser' is used
 
 import datetime
 import os
+import sys
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -39,6 +40,7 @@ from Bio.SeqIO.FastaIO import SimpleFastaParser  # low level fast fasta parser
 from ipywidgets import IntProgress
 from IPython.display import display
 from time import time
+from loguru import logger
 sns.set()
 
 
@@ -129,6 +131,7 @@ def count_snp(in_file, df, nuc_to_watch):
         reads = SimpleFastaParser(in_handle)
         for record in reads:
             coverage += 1
+            read_id = record[0]
 
             read = record[1]
             for row in df.index:
@@ -139,7 +142,7 @@ def count_snp(in_file, df, nuc_to_watch):
 
                     df.loc[row, snp] += 1
 
-    return df, coverage - 1
+    return df, coverage - 1, read_id
 
 
 def create_pivot_df(df_snp):
@@ -225,13 +228,30 @@ def convert_pivot_df_into_percent(df_duplex_container):
     return df_perc_container
 
 
+#TODO put messages into separate file, into a dict, for example
+# and import it to just call the items to show them
+# so as to make main function not so large
+
+# TODO delete all the try inside the main
+# or just test them prior to it
+
 def main():
 
     start_time = time()
     file_counter = 0
     nucleotides = ["A", "T", "G", "C"]
-
-    if os.path.exists("./input_data"):
+   
+    #############################
+    # logging 
+    if not os.path.exists("./log"):
+        os.mkdir("./log")
+    logger.remove() # don't put messages into notebook output
+    logger.add("./log/apobec_log_{time}.txt", backtrace=False)
+    logger.add(sys.stderr, level="CRITICAL")
+    #############################################
+    
+    if os.path.exists("./input_data"): #TODO make if not and then return
+    # to get rid of else block below
         input_files = get_input_files_names("./input_data")
 
         num_files = len(input_files)
@@ -243,61 +263,50 @@ def main():
 
         progress_bar = IntProgress(min=0, max=num_files, bar_style='success')
         display(progress_bar)
-
+        
         for f in input_files:
-            df_raw_snp_container = []
-            df_duplex_container = []
-            
             try:
+                df_raw_snp_container = []
+                df_duplex_container = []
                 ref_seq = get_ref(f)
-            except PermissionError as permerr:
-                print("""
-                warning: It seems that the file'{0}' is open in some other
-                application, like 'Geneious' or whatever,which doesn't allow it 
-                to be processed. Now this file is skipped
-                """.format(f))
-
-            for nuc in nucleotides:
-                snp_type = nucleotides[:]
-                snp_type.remove(nuc)
+    
+                for nuc in nucleotides:
+                    snp_type = nucleotides[:]
+                    snp_type.remove(nuc)
+                    
+                    duplex_posits = get_duplex_posits(ref_seq, nuc)
+                    df = create_df(duplex_posits, snp_type)
+    
+                    df_snp, coverage, record_id = count_snp(f, df, nuc)
+    
+                    df_duplex_in_context = create_pivot_df(df_snp)
+                    df_raw_snp_container.append(df_snp)
+                    df_duplex_container.append(df_duplex_in_context)
+                    
+                df_perc_container = convert_pivot_df_into_percent(df_duplex_container)
                 
-                duplex_posits = get_duplex_posits(ref_seq, nuc)
-                df = create_df(duplex_posits, snp_type)
-
-                try:
-                    df_snp, coverage = count_snp(f, df, nuc)
-                except PermissionError as permerr:
-                    print("""
-                      warning: It seems that the file'{0}' is open in some other 
-                      application, like 'Geneious' or whatever,
-                      which doesn't allow it to be processed
-                      Now this file is skipped
-                       """.format(f))
-
-                df_duplex_in_context = create_pivot_df(df_snp)
-                df_raw_snp_container.append(df_snp)
-                df_duplex_container.append(df_duplex_in_context)
+                df_cov = pd.DataFrame.from_dict(
+                    {"coverage": coverage}, orient='index')
+    
                 
-            df_perc_container = convert_pivot_df_into_percent(df_duplex_container)
-            
-            df_cov = pd.DataFrame.from_dict(
-                {"coverage": coverage}, orient='index')
-
-            try:
                 save_df(f,
                         df_raw_snp_container,
                         df_duplex_container,
                         df_perc_container,
                         df_cov)
-            except PermissionError as permerr:
-                print("""
-                      warning: It seems that excel spreadsheet '{0}' is open in excel.
-                      To process the corresponding 'fasta' file, rerun the script
-                      now this file is skipped. error: {1}
-                      """.format(f, permerr))
-              
-            progress_bar.value += 1
-            file_counter += 1
+                
+                progress_bar.value += 1
+                file_counter += 1
+            
+            except Exception:
+                logger.info(
+                    """\n\t==================================================
+                    file: {0} 
+                    sequence id: {1}
+                    ====================================================""".format(f, record_id))
+                logger.exception("")
+                print("exception detected. see log for more details")
+                progress_bar.value += 1                
 
         finish_time = time()
         total_time = finish_time - start_time

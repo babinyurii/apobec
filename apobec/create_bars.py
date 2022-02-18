@@ -111,7 +111,7 @@ def show_report(total_time, total_files):
     file processed: {0}
     time taken: {1} hours {2} minutes {3} seconds
     
-    the results are in the folder 'output_apobec'
+    the results are in the folder 'output_duplex_plots'
     
     ---------------
     ... job finished at {4}
