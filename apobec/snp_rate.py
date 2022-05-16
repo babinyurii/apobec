@@ -36,6 +36,7 @@ low level fasta parser 'SimpleFastaParser' is used
 
 import datetime
 import os
+import sys
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
@@ -43,6 +44,7 @@ from Bio.SeqIO.FastaIO import SimpleFastaParser  # low level fast fasta parser
 from time import time
 from IPython.display import display
 from ipywidgets import IntProgress
+from loguru import logger
 sns.set()
 
 
@@ -164,13 +166,18 @@ def save_df(pivot_df, df_raw_count, time_stamp):
 
     time_stamp = time_stamp.split(":")
     time_stamp = "-".join(time_stamp)
+    
+    
+    pivot_df.to_csv("./output_apobec/mutation_rate_" + time_stamp + '_.csv', 
+                    encoding='utf-8')
 
-    writer = pd.ExcelWriter(
-        "./output_apobec/mutation_rate_" + time_stamp + '_.xlsx')
-    pivot_df.to_excel(writer, "pivot spreadsheet")
-    df_raw_count.to_excel(writer, "snp raw count")
+    # saving changed to csv due to error
+    #writer = pd.ExcelWriter(
+   #     "./output_apobec/mutation_rate_" + time_stamp + '_.xlsx')
+    #pivot_df.to_excel(writer, "pivot spreadsheet")
+    #df_raw_count.to_excel(writer, "snp raw count")
 
-    writer.save()
+    #writer.save()
 
 
 def get_current_time():
@@ -211,7 +218,16 @@ def main():
 
     start_time = time()
     file_counter = 0
-
+    
+    #############################
+    # logging 
+    if not os.path.exists("./log"):
+        os.mkdir("./log")
+    logger.remove() # don't put messages into notebook output
+    logger.add("./log/apobec_snp_rate_log_{time}.txt", backtrace=False)
+    logger.add(sys.stderr, level="CRITICAL")
+    ############################################
+    
     if os.path.exists("./input_data"):
         input_files = get_input_files_names("./input_data")
 
@@ -232,53 +248,56 @@ def main():
             try:
                 ref_seq = get_ref(f)
                 snpes_per_read = count_snp_per_read(ref_seq, f)
-            except PermissionError as permerr:
-                print("""
-                      warning: It seems that the file'{0}' is open in some other 
-                      application, like 'Geneious' or whatever,
-                      which doesn't allow it to be processed
-                      Now this file is skipped
-                       """.format(f))
-
-            series_container.append(snpes_per_read)
-            progress_bar.value += 1
-            file_counter += 1
-
+                series_container.append(snpes_per_read)
+                progress_bar.value += 1
+                file_counter += 1
+            except Exception:
+                logger.info(
+                    """\n\t==================================================
+                    file: {0} 
+                    ====================================================""".format(f))
+                logger.exception("")
+                print("exception detected. see log for more details")
+                progress_bar.value += 1
+            
         print("snp collected...")
-        df_raw_count = pd.DataFrame(series_container).T
-        # drop first raw which is a reference to itself comparison
-        df_raw_count.drop([0], inplace=True)
-        pivot = df_raw_count.describe()
-        mode, median = get_mode_median(df_raw_count)
-        pivot_df = pd.concat([pivot, mode, median])
-
-        # renaming index values in pivot df
-        pivot_df.rename(index={'count': 'reads total',
-                               'mean': 'mean snp per read',
-                               'min': 'min number of snp',
-                               'max': 'max number of snp',
-                               'mode': 'mode snp',
-                               'median': 'median snp'
-                               }, inplace=True)
-
-        pivot_df = calculate_non_mutated(pivot_df, df_raw_count).T
-
-        time_stamp = get_current_time()
         
         try:
+            df_raw_count = pd.DataFrame(series_container).T
+            # drop first raw which is a reference to itself comparison
+            df_raw_count.drop([0], inplace=True)
+            pivot = df_raw_count.describe()
+            mode, median = get_mode_median(df_raw_count)
+            pivot_df = pd.concat([pivot, mode, median])
+    
+            # renaming index values in pivot df
+            pivot_df.rename(index={'count': 'reads total',
+                                   'mean': 'mean snp per read',
+                                   'min': 'min number of snp',
+                                   'max': 'max number of snp',
+                                   'mode': 'mode snp',
+                                   'median': 'median snp'
+                                   }, inplace=True)
+    
+            pivot_df = calculate_non_mutated(pivot_df, df_raw_count).T
+    
+            time_stamp = get_current_time()
             create_strip_plot(df_raw_count, time_stamp)
             print("plot consctructed...")
-        except:
-            print("something went wrong, plot construction is skipped...")
+        
 
-        df_raw_count = df_raw_count.T  # transpose after plotting
-        save_df(pivot_df, df_raw_count, time_stamp)
-        print("spreadsheet saved...")
-
-        finish_time = time()
-        total_time = finish_time - start_time
-        show_report(total_time, file_counter)
-
+            df_raw_count = df_raw_count.T  # transpose after plotting
+            save_df(pivot_df, df_raw_count, time_stamp)
+            print("spreadsheet saved...")
+    
+            finish_time = time()
+            total_time = finish_time - start_time
+            show_report(total_time, file_counter)
+        except Exception:
+            logger.info("""\n\t==================================================""")
+            logger.exception("")
+            print("exception detected. see log for more details")
+            
     else:
         os.mkdir("./input_data")
         print(

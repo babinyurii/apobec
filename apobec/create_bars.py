@@ -93,7 +93,7 @@ def create_bar_chart(file_name, df_perc_container, largest_percent):
         plt.ylim(0, largest_percent + 5)
 
         nuc = df.index[0][0]
-        fig.savefig("./output_duplex_plots/" + file_name.rsplit(".", 1)[0] +"_" + nuc + "_1st_pos_.png")
+        fig.savefig("./output_duplex_plots/" + file_name.rsplit(".", 1)[0] +"_" + nuc + "_.png")
         # plt.show() # comment to save figure, otherwise it'll save blank file
         plt.close(fig)  # comment the line to show the figure in the jupyter or wherever
 
