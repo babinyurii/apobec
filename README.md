@@ -20,7 +20,7 @@ and run :
 ## Description
 The scripts take fasta alignment as an input. The input file is the result of deep sequencing reads mapping onto the reference sequence and is imported from the Geneious software.
 
-`count_snp_duplex.py` counts  SNP in dinucleotide duplex context.
+`count_snp_duplex.py` counts  mutations in dinucleotide duplex context.
 
 `create_bars.py` outputs summary bar charts : 
 ![bars](output_example/bars.png)
@@ -32,7 +32,7 @@ The scripts take fasta alignment as an input. The input file is the result of de
 
 ![bars](output_example/pivot_percent.PNG)
 
-`snp_rate.py` counts SNP in each read.
+`snp_rate.py` counts mutations in each read.
 
 It outputs a distribution plot:
 ![dist](output_example/snp_dist.png)
