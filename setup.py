@@ -3,14 +3,14 @@ from distutils.core import setup
 setup(
   name = 'apobec',
   packages = ['apobec'],   
-  version = '0.4',      
+  version = '0.6',      
   license='MIT',        
-  description = 'script for SNP counting in deep sequencing data',   
+  description = 'scripts for mutations counting in deep sequencing data',   
   author = 'Yuriy Babin',                  
   author_email = 'babin.yurii@gmail.com',      
   url = 'https://github.com/babinyurii/apobec', 
-  download_url = 'https://github.com/babinyurii/apobec/archive/refs/tags/v_0.4.tar.gz',
-  keywords = ['bioinformatics', 'SNP'],   
+  download_url = 'https://github.com/babinyurii/apobec/archive/refs/tags/v_0.6.tar.gz',
+  keywords = ['bioinformatics', 'mutation', 'apobec'],   
   install_requires=[            
           'pandas',
           'biopython',
